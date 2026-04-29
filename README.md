@@ -3,8 +3,6 @@ This is designed to automatically label buoys like those used in the robotx comp
 
 Existing labels can be verified and updated in most environments.
 
-The live label generator is designed to be run in an IsaacROS docker container, set up using instructions outlined by stereolabs with a ZED camera. [IsaacROS with ZED Cameras](https://www.stereolabs.com/docs/isaac-ros/setting_up_isaac_ros). Skip to [Label using folder of images](#label-using-folder-of-images) section if you are not running IsaacSIM. 
-
 ## Installation
 
 Clone the repository
@@ -19,6 +17,8 @@ Install all dependencies
 cd autolabel
 pip install -r requirements.txt
 ```
+
+The live label generator is designed to be run in an IsaacROS docker container, set up using instructions outlined by stereolabs with a ZED camera. [IsaacROS with ZED Cameras](https://www.stereolabs.com/docs/isaac-ros/setting_up_isaac_ros). Skip to [Label using folder of images](#label-using-folder-of-images) section if you are not running IsaacSIM. 
 
 If you are running IsaacSIM and using zed cameras, you will also need to run the following commands for additional dependencies in the docker container:
 ```bash
