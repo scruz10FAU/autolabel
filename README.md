@@ -1,13 +1,23 @@
 # Autolabeling Buoys for Robotx
-This is designed to automatically label buoys like those used in the robotx competition. The label generator is designed to be run in an IsaacROS docker container, set up using instructions outlined by stereolabs with a ZED camera. [IsaacROS with ZED Cameras](https://www.stereolabs.com/docs/isaac-ros/setting_up_isaac_ros). 
+This is designed to automatically label buoys like those used in the robotx competition. 
 
-The labels can be verified and updated without using an IsaacROS environment.
+Existing labels can be verified and updated in most environments.
+
+The live label generator is designed to be run in an IsaacROS docker container, set up using instructions outlined by stereolabs with a ZED camera. [IsaacROS with ZED Cameras](https://www.stereolabs.com/docs/isaac-ros/setting_up_isaac_ros). Skip to [Label using folder of images](### Label using folder of images) section if you are not running IsaacSIM. 
 
 ## Installation
 Install all dependencies
 
 ```bash
 pip install -r requirements.txt
+```
+
+If you are running IsaacSIM and using zed cameras, you will also need to run the following commands for additional dependencies in the docker container:
+```bash
+python3 -m pip install --upgrade pip  
+python -m pip install cython numpy opencv-python pyopengl  
+cd "/usr/local/zed/"  
+python3 get_python_api.py  
 ```
 
 ## Usage
@@ -35,6 +45,7 @@ You can add arguments as follows when running the main program
 | `-st`, `--save_training_data` | bool | Save images and YOLO labels for training (default False) | flag sets to True |
 | `-o`, `--output_dir` | str | Output directory for training images and labels | directory path as a string|
 | `-lc`, `--local_camera` | bool | Use a locally connected ZED camera instead of IP stream (default False) | flag sets to True |
+
 
 ### Label using folder of images
 
