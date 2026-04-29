@@ -6,6 +6,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+from matplotlib.gridspec import GridSpec
 from matplotlib.widgets import Button
 
 parser = argparse.ArgumentParser(description='View and select training images with YOLO labels')
@@ -56,12 +57,20 @@ for batch_idx in range(total_batches):
     batch_files = image_files[start:end]
     n = len(batch_files)
 
-    fig, axes = plt.subplots(rows, cols, figsize=(15, 15))
+    fig = plt.figure(figsize=(15, 13))
     fig.canvas.manager.set_window_title(
         f"Batch {batch_idx + 1}/{total_batches} — Click to select | Save & Continue when done"
     )
-
-    axes_flat = axes.flatten()
+    try:
+        fig.canvas.manager.window.wm_geometry("+0+0")  # Tk backend
+    except AttributeError:
+        try:
+            fig.canvas.manager.window.move(0, 0)  # Qt backend
+        except AttributeError:
+            pass
+    gs = GridSpec(rows + 1, cols, figure=fig,
+                  height_ratios=[1] * rows + [0.12], hspace=0.35, wspace=0.1)
+    axes_flat = [fig.add_subplot(gs[r, c]) for r in range(rows) for c in range(cols)]
     selected = set()   # paths selected in this batch
     overlays = {}      # ax -> (overlay_patch, img_path)
 
@@ -120,7 +129,7 @@ for batch_idx in range(total_batches):
 
     fig.canvas.mpl_connect('button_press_event', on_click)
 
-    ax_btn = fig.add_axes([0.38, 0.01, 0.24, 0.04])
+    ax_btn = fig.add_subplot(gs[rows, 1:3])
     btn = Button(ax_btn, f"Save & Continue  ({batch_idx + 1}/{total_batches})")
 
     btn_clicked = [False]
@@ -138,7 +147,7 @@ for batch_idx in range(total_batches):
     btn.on_clicked(on_save)
     fig.canvas.mpl_connect('close_event', on_close)
 
-    plt.tight_layout(rect=[0, 0.07, 1, 1])
+    plt.tight_layout()
     plt.show()
 
 if all_selected:

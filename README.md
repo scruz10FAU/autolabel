@@ -6,9 +6,17 @@ Existing labels can be verified and updated in most environments.
 The live label generator is designed to be run in an IsaacROS docker container, set up using instructions outlined by stereolabs with a ZED camera. [IsaacROS with ZED Cameras](https://www.stereolabs.com/docs/isaac-ros/setting_up_isaac_ros). Skip to [Label using folder of images](### Label using folder of images) section if you are not running IsaacSIM. 
 
 ## Installation
+
+Clone the repository
+
+```bash
+git clone https://github.com/scruz10FAU/autolabel.git
+```
+
 Install all dependencies
 
 ```bash
+cd autolabel
 pip install -r requirements.txt
 ```
 
@@ -49,10 +57,19 @@ You can add arguments as follows when running the main program
 
 ### Label using folder of images
 
-This runs YOLO auto-labeling on a folder of images (or other input source) and saves the resulting images and labels for training.
+This runs YOLO auto-labeling on a folder of images (or other input source) and saves the resulting images and labels for training in Yolov8 
 
 ```bash
 python autoLabelGen.py -m models/best_alex.pt -s buoy_images -t folder
+```
+Output is saved in the following format
+
+```
+training-directory/
+├── images/
+│   └── img0.jpg
+├── labels/
+    └── img0.txt
 ```
 
 You can add arguments as follows when running the autoLabelGen program
@@ -76,6 +93,12 @@ This displays saved training images with their YOLO bounding box labels overlaid
 python viewImages.py 
 ```
 
+Images are viewed 16 at a time with the labels added. Click on images if their label is incorrect so they can be added to a queue for labels to be fixed. Images with incorrect labels will be highlighted in red, like shown below:
+
+![Grid image view](labelViewer.png)
+
+Selected images will be added to a list for use in the "Edit image labels" section.
+
 You can add arguments as follows when running the viewImages program
 | Flags | Data type | Function | options |
 | -------------------------------- | -------- | ------------------------------------| ---------------------------- |
@@ -86,11 +109,18 @@ You can add arguments as follows when running the viewImages program
 
 ### Edit image labels
 
-This opens a tkinter GUI for manually drawing, editing, and deleting YOLO bounding boxes on training images. If a `to_update_file` exists, only those images are loaded; otherwise all images in the image directory are shown. Right-click a box to delete it, and use the Prev/Next buttons to navigate and auto-save.
+This opens a tkinter GUI for manually drawing, editing, and deleting YOLO bounding boxes on training images. If a `to_update_file` exists, only those images are loaded; otherwise all images in the image directory are shown. 
 
 ```bash
 python labeleditor.py -i training_data/images -l training_data/labels -c classes.json
 ```
+
+Right-click a box to delete it, and use the Prev/Next buttons to navigate and auto-save.
+
+![Incorrectly labeled image](labelEdit.png)
+
+Select the correct class and redraw the box to fix the label
+![Corrected label](labelFix.png)
 
 You can add arguments as follows when running the labeleditor program
 | Flags | Data type | Function | options |
