@@ -18,12 +18,12 @@ cd autolabel
 pip install -r requirements.txt
 ```
 
-The live label generator is designed to be run in an IsaacROS docker container, set up using instructions outlined by stereolabs with a ZED camera. [IsaacROS with ZED Cameras](https://www.stereolabs.com/docs/isaac-ros/setting_up_isaac_ros). Skip to [Label using folder of images](#label-using-folder-of-images) section if you are not running ZED cameras in IsaacROS. 
+The live label generator is designed to be run in an IsaacROS docker container, set up using instructions outlined by stereolabs with a ZED camera. [IsaacROS with ZED Cameras](https://www.stereolabs.com/docs/isaac-ros/setting_up_isaac_ros). 
 
 If you are running IsaacSIM and using zed cameras, you will also need to run the following commands for additional dependencies in the docker container:
 ```bash
 python3 -m pip install --upgrade pip  
-python -m pip install cython numpy opencv-python pyopengl  
+python -m pip install cython opencv-python pyopengl  
 cd "/usr/local/zed/"  
 python3 get_python_api.py  
 ```
@@ -32,36 +32,19 @@ python3 get_python_api.py
 
 ### Detect buoys and label images
 
-This detects buoys using the ZED cameras. It can be run using simulated cameras in IsaacSIM or actual physical cameras. 
-
-```bash
-python object_detection_with_boxes.py -v -s -m models/best_alex.onnx -st
-```
-
-This code won't work if you do not have a valid credentials file for the firebase database used
-
-You can add arguments as follows when running the main program
-| Flags | Data type | Function | options |
-| -------------------------------- | -------- | ------------------------------------| ---------------------------- |
-| `-ip`, `--ip_address` | str | IP address of the ZED camera stream | xxx.x.x.x |
-| `--port` | int | Port for the ZED camera stream | any integer |
-| `-m`, `--model_path` | str | Path to .onnx model for custom object detection | model path as a string|
-| `-v`, `--visualize_output` | bool | Show output in a window (default False) | flag sets to True |
-| `-s`, `--scale_down` | bool | Resize output down to 50% (default False) | flag sets to True |
-| `-sv`, `--show_validation` | bool | Show validation overlays for detections (default False) | flag sets to True |
-| `-r`, `--rotation` | int | Rotation value for the image | any integer |
-| `-st`, `--save_training_data` | bool | Save images and YOLO labels for training (default False) | flag sets to True |
-| `-o`, `--output_dir` | str | Output directory for training images and labels | directory path as a string|
-| `-lc`, `--local_camera` | bool | Use a locally connected ZED camera instead of IP stream (default False) | flag sets to True |
-
-
-### Label using folder of images
-
 This runs YOLO auto-labeling on a folder of images (or other input source) and saves the resulting images and labels for training in Yolov8 
 
 ```bash
 python autoLabelGen.py -m models/best_alex.pt -s buoy_images -t folder
 ```
+
+To label from a live ZED camera ROS topic and visualize the detection stream in real time:
+
+```bash
+python autoLabelGen.py -m models/best_alex.pt -t ros -s /zed/zed_node/rgb/color/rect/image -v
+```
+
+The `-v` flag opens a window showing every incoming frame with bounding boxes and class labels overlaid. Frames are still filtered by confidence and blur threshold before being saved. Press `q` to stop.
 Output is saved in the following format
 
 ```
@@ -77,13 +60,76 @@ You can add arguments as follows when running the autoLabelGen program
 | -------------------------------- | -------- | ------------------------------------| ---------------------------- |
 | `-m`, `--model` | str | Path to YOLO .pt model | model path |
 | `-s`, `--source` | str | Camera index, video path, image folder, or ROS topic | path or index |
-| `-t`, `--source-type` | str | Input source type (default: `folder`) | `camera`, `video`, `folder`, `ros` |
+| `-t`, `--source-type` | str | Input source type (default: `ros`) | `camera`, `video`, `folder`, `ros` |
 | `--out-images` | str | Output folder for labeled images | directory path |
 | `--out-labels` | str | Output folder for YOLO label files | directory path |
 | `-c`, `--conf` | float | Detection confidence threshold | float between 0 and 1 |
 | `--blur` | float | Blur threshold (Laplacian variance); 0 to disable | float |
-| `-v`, `--show` | bool | Show detections in a live window (default False) | flag sets to True |
+| `-v`, `--show` | bool | Display a live window with detection boxes and class labels overlaid. Only active for `camera`, `video`, and `ros` source types. Press `q` to stop. | flag sets to True |
 
+
+### Augment images with lighting variations
+
+This generates new training images by applying lighting augmentations to existing ones, simulating different environments such as overcast sky, bright sun, fog, or sunset. Each augmented image is saved alongside a copy of the original label file — bounding box coordinates are unaffected by lighting changes so the labels remain valid.
+
+There are five named presets and a random mode that samples brightness, contrast, color temperature, fog, and shadow parameters independently.
+
+```bash
+python augment_lighting.py
+```
+
+Apply specific presets only (no random augmentations):
+
+```bash
+python augment_lighting.py --preset overcast --preset foggy --preset sunset --count 0
+```
+
+Generate 5 random augmentations per image with a fixed seed:
+
+```bash
+python augment_lighting.py -n 5 --seed 42
+```
+
+Use `--dry-run` to preview what would be created without writing any files:
+
+```bash
+python augment_lighting.py --preset sunny -n 3 --dry-run
+```
+
+You can add arguments as follows when running the augment_lighting program
+| Flags | Data type | Function | options |
+| -------------------------------- | -------- | ------------------------------------| ---------------------------- |
+| `-i`, `--images` | str | Directory of source training images (default: `trainImagesZed/images`) | directory path |
+| `-l`, `--labels` | str | Directory of source YOLO label files (default: `trainImagesZed/labels`) | directory path |
+| `--out-images` | str | Output directory for augmented images (default: same as `--images`) | directory path |
+| `--out-labels` | str | Output directory for augmented labels (default: same as `--labels`) | directory path |
+| `--preset` | str | Named lighting preset to apply; can be repeated (default: none) | `overcast`, `sunny`, `sunset`, `dim`, `foggy` |
+| `-n`, `--count` | int | Number of randomly parameterized augmentations per image (default: `3`); set to `0` to use presets only | integer |
+| `--seed` | int | Random seed for reproducible random augmentations | integer |
+| `--dry-run` | bool | Print what would be created without writing any files | flag sets to True |
+
+### Remove duplicate images
+
+This scans an images folder and removes near-duplicate images along with their YOLO label files. Two images are only removed as duplicates if they are both structurally similar (same scene layout) AND have a similar color distribution. Images that look structurally the same but contain differently colored buoys are kept.
+
+```bash
+python dedup_dataset.py
+```
+
+Run with `--dry-run` first to preview what would be deleted without removing anything:
+
+```bash
+python dedup_dataset.py --dry-run
+```
+
+You can add arguments as follows when running the dedup_dataset program
+| Flags | Data type | Function | options |
+| -------------------------------- | -------- | ------------------------------------| ---------------------------- |
+| `-i`, `--images` | str | Directory of training images (default: `trainImagesZed/images`) | directory path |
+| `-l`, `--labels` | str | Directory of YOLO label files (default: `trainImagesZed/labels`) | directory path |
+| `--hash-thresh` | int | Max perceptual hash distance to consider two images structurally similar; lower is stricter (default: `8`, range: 0–64) | integer |
+| `--color-thresh` | float | Min hue-histogram correlation to consider two images the same color; higher is stricter (default: `0.90`, range: 0–1) | float |
+| `--dry-run` | bool | Print what would be deleted without deleting anything | flag sets to True |
 
 ### View and verify image labels
 

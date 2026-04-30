@@ -144,6 +144,11 @@ def run(model_path, source_type, source, out_images, out_labels,
     logging.getLogger('ultralytics').setLevel(logging.ERROR)
     model = YOLO(model_path)
 
+    live_source = source_type in ('camera', 'video', 'ros')
+    if show and not live_source:
+        print("Note: --show is only supported for camera, video, and ros sources. Disabling.")
+        show = False
+
     os.makedirs(out_images, exist_ok=True)
     os.makedirs(out_labels, exist_ok=True)
 
@@ -158,6 +163,22 @@ def run(model_path, source_type, source, out_images, out_labels,
         for frame in get_frame_iter(source_type, source):
             results = model(frame, conf=conf, verbose=False)
             boxes = results[0].boxes
+
+            # Show every frame on live sources, with detection boxes and class names overlaid
+            if show:
+                display = frame.copy()
+                if boxes is not None and len(boxes) > 0:
+                    for box in boxes:
+                        x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+                        cls = int(box.cls[0])
+                        conf_val = float(box.conf[0])
+                        name = model.names.get(cls, str(cls))
+                        cv2.rectangle(display, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                        cv2.putText(display, f"{name} {conf_val:.2f}", (x1, y1 - 6),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                cv2.imshow("Auto Label", display)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
 
             if boxes is None or len(boxes) == 0:
                 continue
@@ -192,18 +213,6 @@ def run(model_path, source_type, source, out_images, out_labels,
             saved += 1
             img_idx += 1
 
-            if show:
-                display = frame.copy()
-                for box in results[0].boxes:
-                    x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
-                    cls = int(box.cls[0])
-                    cv2.rectangle(display, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                    cv2.putText(display, str(cls), (x1, y1 - 6),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-                cv2.imshow("Auto Label", display)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
-
     except KeyboardInterrupt:
         print("\nStopped by user.")
     finally:
@@ -214,10 +223,8 @@ def run(model_path, source_type, source, out_images, out_labels,
 
 if __name__ == '__main__':
     def_model_path   = "models/best_alex.pt"
-    def_source       = "/zed/zed_node/rgb/color/rect/image"
     def_source_type  = "ros"
-    def_source_type  = "folder"
-    def_source       = "buoy_images"
+    def_source       = "/zed/zed_node/rgb/color/rect/image"
     def_out_images   = "trainImagesZed/images"
     def_out_labels   = "trainImagesZed/labels"
     def_conf         = 0.5
