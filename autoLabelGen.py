@@ -238,9 +238,9 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--source-type', dest='source_type',
                         choices=['camera', 'video', 'folder', 'ros'], default=def_source_type,
                         help=f"Input source type (default: {def_source_type})")
-    parser.add_argument('--out-images', default=def_out_images,
+    parser.add_argument('--out-images', '-i', default=def_out_images,
                         help=f"Output folder for images (default: {def_out_images})")
-    parser.add_argument('--out-labels', default=def_out_labels,
+    parser.add_argument('--out-labels', 'l', default=def_out_labels,
                         help=f"Output folder for labels (default: {def_out_labels})")
     parser.add_argument('-c', '--conf', type=float, default=def_conf,
                         help=f"Detection confidence threshold (default: {def_conf})")

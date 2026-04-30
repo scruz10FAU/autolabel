@@ -61,8 +61,8 @@ You can add arguments as follows when running the autoLabelGen program
 | `-m`, `--model` | str | Path to YOLO .pt model | model path |
 | `-s`, `--source` | str | Camera index, video path, image folder, or ROS topic | path or index |
 | `-t`, `--source-type` | str | Input source type (default: `ros`) | `camera`, `video`, `folder`, `ros` |
-| `--out-images` | str | Output folder for labeled images | directory path |
-| `--out-labels` | str | Output folder for YOLO label files | directory path |
+| `-i` , `--out-images` | str | Output folder for labeled images | directory path |
+| `-l`, `--out-labels` | str | Output folder for YOLO label files | directory path |
 | `-c`, `--conf` | float | Detection confidence threshold | float between 0 and 1 |
 | `--blur` | float | Blur threshold (Laplacian variance); 0 to disable | float |
 | `-v`, `--show` | bool | Display a live window with detection boxes and class labels overlaid. Only active for `camera`, `video`, and `ros` source types. Press `q` to stop. | flag sets to True |
