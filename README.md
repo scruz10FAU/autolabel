@@ -68,46 +68,6 @@ You can add arguments as follows when running the autoLabelGen program
 | `-v`, `--show` | bool | Display a live window with detection boxes and class labels overlaid. Only active for `camera`, `video`, and `ros` source types. Press `q` to stop. | flag sets to True |
 
 
-### Augment images with lighting variations
-
-This generates new training images by applying lighting augmentations to existing ones, simulating different environments such as overcast sky, bright sun, fog, or sunset. Each augmented image is saved alongside a copy of the original label file — bounding box coordinates are unaffected by lighting changes so the labels remain valid.
-
-There are five named presets and a random mode that samples brightness, contrast, color temperature, fog, and shadow parameters independently.
-
-```bash
-python augment_lighting.py
-```
-
-Apply specific presets only (no random augmentations):
-
-```bash
-python augment_lighting.py --preset overcast --preset foggy --preset sunset --count 0
-```
-
-Generate 5 random augmentations per image with a fixed seed:
-
-```bash
-python augment_lighting.py -n 5 --seed 42
-```
-
-Use `--dry-run` to preview what would be created without writing any files:
-
-```bash
-python augment_lighting.py --preset sunny -n 3 --dry-run
-```
-
-You can add arguments as follows when running the augment_lighting program
-| Flags | Data type | Function | options |
-| -------------------------------- | -------- | ------------------------------------| ---------------------------- |
-| `-i`, `--images` | str | Directory of source training images (default: `trainImagesZed/images`) | directory path |
-| `-l`, `--labels` | str | Directory of source YOLO label files (default: `trainImagesZed/labels`) | directory path |
-| `--out-images` | str | Output directory for augmented images (default: same as `--images`) | directory path |
-| `--out-labels` | str | Output directory for augmented labels (default: same as `--labels`) | directory path |
-| `--preset` | str | Named lighting preset to apply; can be repeated (default: none) | `overcast`, `sunny`, `sunset`, `dim`, `foggy` |
-| `-n`, `--count` | int | Number of randomly parameterized augmentations per image (default: `3`); set to `0` to use presets only | integer |
-| `--seed` | int | Random seed for reproducible random augmentations | integer |
-| `--dry-run` | bool | Print what would be created without writing any files | flag sets to True |
-
 ### Remove duplicate images
 
 This scans an images folder and removes near-duplicate images along with their YOLO label files. Two images are only removed as duplicates if they are both structurally similar (same scene layout) AND have a similar color distribution. Images that look structurally the same but contain differently colored buoys are kept.
@@ -183,3 +143,87 @@ The classes JSON file should follow this format:
     "1": {"name": "green_buoy", "color": "green"}
 }
 ```
+
+
+### Augment images with lighting variations
+
+This generates new training images by applying lighting augmentations to existing ones, simulating different environments such as overcast sky, bright sun, fog, or sunset. Each augmented image is saved alongside a copy of the original label file — bounding box coordinates are unaffected by lighting changes so the labels remain valid.
+
+There are five named presets and a random mode that samples brightness, contrast, color temperature, fog, and shadow parameters independently.
+
+```bash
+python augment_lighting.py
+```
+
+Apply specific presets only (no random augmentations):
+
+```bash
+python augment_lighting.py --preset overcast --preset foggy --preset sunset --count 0
+```
+
+Generate 5 random augmentations per image with a fixed seed:
+
+```bash
+python augment_lighting.py -n 5 --seed 42
+```
+
+Use `--dry-run` to preview what would be created without writing any files:
+
+```bash
+python augment_lighting.py --preset sunny -n 3 --dry-run
+```
+
+You can add arguments as follows when running the augment_lighting program
+| Flags | Data type | Function | options |
+| -------------------------------- | -------- | ------------------------------------| ---------------------------- |
+| `-i`, `--images` | str | Directory of source training images (default: `trainImagesZed/images`) | directory path |
+| `-l`, `--labels` | str | Directory of source YOLO label files (default: `trainImagesZed/labels`) | directory path |
+| `--out-images` | str | Output directory for augmented images (default: same as `--images`) | directory path |
+| `--out-labels` | str | Output directory for augmented labels (default: same as `--labels`) | directory path |
+| `--preset` | str | Named lighting preset to apply; can be repeated (default: none) | `overcast`, `sunny`, `sunset`, `dim`, `foggy` |
+| `-n`, `--count` | int | Number of randomly parameterized augmentations per image (default: `3`); set to `0` to use presets only | integer |
+| `--seed` | int | Random seed for reproducible random augmentations | integer |
+| `--dry-run` | bool | Print what would be created without writing any files | flag sets to True |
+
+### Finetune the YOLOv8 model
+
+This finetunes an existing YOLOv8 `.pt` checkpoint on the local buoy dataset. It automatically merges the available dataset roots, shuffles the images, and splits them into train and validation sets before running training. The best checkpoint is saved to `models/finetuned.pt` when training completes.
+
+```bash
+python finetune.py
+```
+
+Use a specific GPU, more epochs, and a larger batch size:
+
+```bash
+python finetune.py --device 0 --epochs 100 --batch 32
+```
+
+Unfreeze all layers (trains the full network, recommended when you have a lot of new data):
+
+```bash
+python finetune.py --freeze 0
+```
+
+Rebuild the train/val split after adding new images without restarting from scratch:
+
+```bash
+python finetune.py --rebuild-split
+```
+
+You can add arguments as follows when running the finetune program
+| Flags | Data type | Function | options |
+| -------------------------------- | -------- | ------------------------------------| ---------------------------- |
+| `--model` | str | Path to the base `.pt` checkpoint to finetune (default: `models/best_alex.pt`) | file path |
+| `--data-roots` | str (multiple) | Dataset root folders, each must contain `images/` and `labels/` subdirectories (default: `trainImagesZed`) | directory paths |
+| `--val-split` | float | Fraction of images held out for validation (default: `0.15`) | float between 0 and 1 |
+| `--epochs` | int | Number of training epochs (default: `50`) | integer |
+| `--imgsz` | int | Training image size in pixels (default: `640`) | integer |
+| `--batch` | int | Batch size; use `-1` for AutoBatch (default: `16`) | integer |
+| `--lr0` | float | Initial learning rate (default: `0.001`) | float |
+| `--freeze` | int | Number of backbone layers to freeze; set `0` to train the full network (default: `10`) | integer |
+| `--device` | str | Device to train on (default: auto-detect) | `0`, `1`, `cpu`, etc. |
+| `--project` | str | Output directory for training runs (default: `runs/finetune`) | directory path |
+| `--name` | str | Run name inside `--project` (default: `buoy`) | string |
+| `--seed` | int | Random seed for reproducible train/val split (default: `42`) | integer |
+| `--rebuild-split` | bool | Rebuild `autosplit_train/` and `autosplit_val/` even if they already exist | flag sets to True |

@@ -1,0 +1,10 @@
+path: /home/tgarcia/ros2/isaac_ros_ws/isaac_ros_assets/autolabel
+train: autosplit_train/images
+val:   autosplit_val/images
+
+nc: 4
+names:
+  0: red_buoy
+  1: green_buoy
+  2: blue_buoy
+  3: other_buoy

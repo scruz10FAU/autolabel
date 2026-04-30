@@ -1,0 +1,20 @@
+# YOLOv8 dataset config — generated for finetuning
+# Paths are relative to this file's location.
+# The finetune.py script builds train/val splits from these roots.
+
+path: .
+
+# Raw dataset roots (images/ and labels/ subdirectories expected)
+dataset_roots:
+  - trainImagesZed
+
+# Split ratio written into autosplit_train/ and autosplit_val/
+train: autosplit_train/images
+val:   autosplit_val/images
+
+nc: 4
+names:
+  0: red_buoy
+  1: green_buoy
+  2: blue_buoy
+  3: other_buoy
