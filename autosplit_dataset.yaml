@@ -4,7 +4,7 @@ val:   autosplit_val/images
 
 nc: 4
 names:
-  0: red_buoy
-  1: green_buoy
-  2: blue_buoy
-  3: other_buoy
+  0: red_beacon
+  1: green_beacon
+  2: blue_beacon
+  3: off_beacon

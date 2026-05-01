@@ -187,7 +187,7 @@ You can add arguments as follows when running the augment_lighting program
 
 ### Finetune the YOLOv8 model
 
-This finetunes an existing YOLOv8 `.pt` checkpoint on the local buoy dataset. It automatically merges the available dataset roots, shuffles the images, and splits them into train and validation sets before running training. The best checkpoint is saved to `models/finetuned.pt` when training completes.
+This finetunes an existing YOLOv8 `.pt` checkpoint on the local buoy dataset. It automatically merges the available dataset roots, shuffles the images, and splits them into train and validation sets before running training. Class names are loaded from a JSON file, so they can be renamed for the new model without modifying the label files. The best checkpoint is saved to `models/finetuned.pt` when training completes.
 
 ```bash
 python finetune.py
@@ -211,11 +211,27 @@ Rebuild the train/val split after adding new images without restarting from scra
 python finetune.py --rebuild-split
 ```
 
+Use a custom classes file to rename classes in the finetuned model:
+
+```bash
+python finetune.py --classes my_classes.json
+```
+
+The classes JSON file should follow this format:
+```json
+{
+    "0": {"name": "port_marker",      "color": "red"},
+    "1": {"name": "starboard_marker", "color": "green"},
+    "2": {"name": "blue_marker",      "color": "blue"},
+    "3": {"name": "other_marker",     "color": "black"}
+}
+```
+
 You can add arguments as follows when running the finetune program
 | Flags | Data type | Function | options |
 | -------------------------------- | -------- | ------------------------------------| ---------------------------- |
-| `--model` | str | Path to the base `.pt` checkpoint to finetune (default: `models/best_alex.pt`) | file path |
-| `--data-roots` | str (multiple) | Dataset root folders, each must contain `images/` and `labels/` subdirectories (default: `trainImagesZed`) | directory paths |
+| `-m`, `--model` | str | Path to the base `.pt` checkpoint to finetune (default: `models/best_alex.pt`) | file path |
+| `-r`, `--data-roots` | str (multiple) | Dataset root folders, each must contain `images/` and `labels/` subdirectories (default: `trainImagesZed`) | directory paths |
 | `--val-split` | float | Fraction of images held out for validation (default: `0.15`) | float between 0 and 1 |
 | `--epochs` | int | Number of training epochs (default: `50`) | integer |
 | `--imgsz` | int | Training image size in pixels (default: `640`) | integer |
@@ -224,6 +240,7 @@ You can add arguments as follows when running the finetune program
 | `--freeze` | int | Number of backbone layers to freeze; set `0` to train the full network (default: `10`) | integer |
 | `--device` | str | Device to train on (default: auto-detect) | `0`, `1`, `cpu`, etc. |
 | `--project` | str | Output directory for training runs (default: `runs/finetune`) | directory path |
-| `--name` | str | Run name inside `--project` (default: `buoy`) | string |
+| `-n`, `--name` | str | Run name inside `--project` (default: `buoy`) | string |
 | `--seed` | int | Random seed for reproducible train/val split (default: `42`) | integer |
 | `--rebuild-split` | bool | Rebuild `autosplit_train/` and `autosplit_val/` even if they already exist | flag sets to True |
+| `-c`, `--classes` | str | JSON file mapping class IDs to names used in the finetuned model (default: `classes.json`) | file path |
