@@ -59,8 +59,8 @@ def box_label(cls):
 def draw_box_on_canvas(cls, x1, y1, x2, y2):
     color = box_color(cls)
     rect_id = canvas.create_rectangle(x1, y1, x2, y2, outline=color, width=2)
-    text_id = canvas.create_text(x1 + 4, y1 + 2, text=box_label(cls),
-                                  anchor='nw', fill=color,
+    text_id = canvas.create_text(x1 + 4, y1 - 2, text=box_label(cls),
+                                  anchor='sw', fill=color,
                                   font=('Arial', 11, 'bold'))
     return rect_id, text_id
 
