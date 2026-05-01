@@ -18,16 +18,6 @@ cd autolabel
 pip install -r requirements.txt
 ```
 
-The live label generator is designed to be run in an IsaacROS docker container, set up using instructions outlined by stereolabs with a ZED camera. [IsaacROS with ZED Cameras](https://www.stereolabs.com/docs/isaac-ros/setting_up_isaac_ros). 
-
-If you are running IsaacSIM and using zed cameras, you will also need to run the following commands for additional dependencies in the docker container:
-```bash
-python3 -m pip install --upgrade pip  
-python -m pip install cython opencv-python pyopengl  
-cd "/usr/local/zed/"  
-python3 get_python_api.py  
-```
-
 ## Usage
 
 ### Detect buoys and label images
@@ -39,6 +29,7 @@ python autoLabelGen.py -m models/best_alex.pt -s buoy_images -t folder
 ```
 
 To label from a live ZED camera ROS topic and visualize the detection stream in real time:
+The initial code was set up using ZED cameras in an IsaacROS docker container, as shown in this link: [IsaacROS with ZED Cameras](https://www.stereolabs.com/docs/isaac-ros/setting_up_isaac_ros). 
 
 ```bash
 python autoLabelGen.py -m models/best_alex.pt -t ros -s /zed/zed_node/rgb/color/rect/image -v
