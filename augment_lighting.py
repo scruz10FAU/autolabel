@@ -77,7 +77,14 @@ def add_shadow(img: np.ndarray, rng: np.random.Generator) -> np.ndarray:
     """Darken a random convex polygon region to simulate a cast shadow."""
     h, w = img.shape[:2]
     n_pts = int(rng.integers(3, 7))
-    pts = rng.integers(0, [w, h], size=(n_pts, 2)).reshape(-1, 1, 2)
+    # Limit shadow to at most half the image in each dimension, at a random offset
+    max_w, max_h = w // 2, h // 2
+    ox = int(rng.integers(0, w - max_w))
+    oy = int(rng.integers(0, h - max_h))
+    pts = rng.integers(0, [max_w, max_h], size=(n_pts, 2))
+    pts[:, 0] += ox
+    pts[:, 1] += oy
+    pts = cv2.convexHull(pts.reshape(-1, 1, 2).astype(np.int32))
     mask = np.ones(img.shape, dtype=np.float32)
     shadow_strength = float(rng.uniform(0.3, 0.6))
     cv2.fillPoly(mask, [pts], (shadow_strength,) * 3)
@@ -180,14 +187,18 @@ def main():
                         choices=list(PRESETS.keys()), metavar='PRESET',
                         help=f"Named lighting preset to apply; repeatable. "
                              f"Choices: {', '.join(PRESETS)}")
-    parser.add_argument('-n', '--count', type=int, default=3,
-                        help="Number of random augmentations per image (default: 3); "
+    parser.add_argument('-n', '--count', type=int, default=None,
+                        help="Number of random augmentations per image "
+                             "(default: 3 when no preset is given, 0 when a preset is given); "
                              "set to 0 to use presets only")
     parser.add_argument('--seed', type=int, default=None,
                         help="Random seed for reproducibility")
     parser.add_argument('--dry-run', action='store_true',
                         help="Print what would be created without writing any files")
     args = parser.parse_args()
+
+    if args.count is None:
+        args.count = 0 if args.presets else 3
 
     img_dir = Path(args.images)
     lbl_dir = Path(args.labels)

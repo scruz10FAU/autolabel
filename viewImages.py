@@ -94,8 +94,17 @@ for batch_idx in range(total_batches):
                         names = list(class_names.values())
                         cls_idx = int(cls)
                         label = names[cls_idx] if cls_idx < len(names) else str(cls_idx)
-                        draw.text((x1 + 4, y1 + 4), label, fill='white', font=get_font(h),
-                                  stroke_width=3, stroke_fill='black')
+                        font = get_font(h)
+                        bbox = draw.textbbox((0, 0), label, font=font)
+                        tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+                        pad = 3
+                        tx = x1
+                        ty = y1 - th - pad * 2
+                        if ty < 0:
+                            ty = y2 + pad  # fall back to below the box
+                        draw.rectangle([tx, ty, tx + tw + pad * 2, ty + th + pad * 2],
+                                       fill='blue')
+                        draw.text((tx + pad, ty + pad), label, fill='white', font=font)
 
         ax.imshow(img)
         ax.set_title(img_path.name, fontsize=7)

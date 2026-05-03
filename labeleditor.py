@@ -100,21 +100,48 @@ def on_mouse_down(event):
 def on_mouse_drag(event):
     canvas.coords(rect, start_x, start_y, event.x, event.y)
 
-def delete_box_at(x, y):
-    for box in boxes:
+def find_box_at(x, y):
+    for i, box in reversed(list(enumerate(boxes))):
         cx = box[1] * canvas_width
         cy = box[2] * canvas_height
         bw = box[3] * canvas_width / 2
         bh = box[4] * canvas_height / 2
         if cx - bw < x < cx + bw and cy - bh < y < cy + bh:
-            canvas.delete(box[5])
-            canvas.delete(box[6])
-            boxes.remove(box)
-            return True
+            return i, box
+    return None, None
+
+def delete_box_at(x, y):
+    i, box = find_box_at(x, y)
+    if box is not None:
+        canvas.delete(box[5])
+        canvas.delete(box[6])
+        boxes.pop(i)
+        return True
     return False
 
 def on_right_click(event):
     delete_box_at(event.x, event.y)
+
+def relabel_box(box_idx, new_cls):
+    box = boxes[box_idx]
+    _, xc, yc, w, h, rect_id, text_id = box
+    color = box_color(new_cls)
+    canvas.itemconfig(rect_id, outline=color)
+    canvas.itemconfig(text_id, text=box_label(new_cls), fill=color)
+    boxes[box_idx] = (new_cls, xc, yc, w, h, rect_id, text_id)
+
+def on_middle_click(event):
+    box_idx, _ = find_box_at(event.x, event.y)
+    if box_idx is None:
+        return
+    menu = tk.Menu(root, tearoff=0)
+    for cls_id, cls_name in class_names.items():
+        menu.add_command(
+            label=cls_name,
+            foreground=class_colors[cls_id],
+            command=lambda cid=cls_id, bi=box_idx: relabel_box(bi, cid)
+        )
+    menu.tk_popup(event.x_root, event.y_root)
 
 def on_mouse_up(event):
     global boxes
@@ -193,6 +220,10 @@ canvas.bind("<ButtonPress-1>", on_mouse_down)
 canvas.bind("<B1-Motion>", on_mouse_drag)
 canvas.bind("<ButtonRelease-1>", on_mouse_up)
 canvas.bind("<ButtonPress-3>", on_right_click)
+canvas.bind("<ButtonPress-2>", on_middle_click)
+
+tk.Label(root, text="Left-drag: draw  |  Middle-click: relabel  |  Right-click: delete",
+         font=('Arial', 9), fg='gray').pack(pady=(0, 4))
 
 # === START ===
 load_image(index)

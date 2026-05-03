@@ -139,7 +139,7 @@ def next_img_index(folder):
 # === Main loop ===
 
 def run(model_path, source_type, source, out_images, out_labels,
-        conf=0.5, blur_thresh=25.0, show=False):
+        conf=0.5, blur_thresh=25.0, show=False, no_detect_interval=0):
 
     logging.getLogger('ultralytics').setLevel(logging.ERROR)
     model = YOLO(model_path)
@@ -154,9 +154,12 @@ def run(model_path, source_type, source, out_images, out_labels,
 
     img_idx = next_img_index(out_images)
     saved = 0
+    no_detect_count = 0
     print(f"Model: {model_path}")
     print(f"Source: {source_type} — {source}")
     print(f"Output: {out_images} / {out_labels}")
+    if no_detect_interval > 0:
+        print(f"Auto-save empty labels every {no_detect_interval} consecutive frame(s) with no detection.")
     print(f"Starting at img{img_idx}. Press Q to stop.\n")
 
     try:
@@ -181,8 +184,19 @@ def run(model_path, source_type, source, out_images, out_labels,
                     break
 
             if boxes is None or len(boxes) == 0:
+                no_detect_count += 1
+                if no_detect_interval > 0 and no_detect_count >= no_detect_interval:
+                    img_path = os.path.join(out_images, f"img{img_idx}.jpg")
+                    lbl_path = os.path.join(out_labels, f"img{img_idx}.txt")
+                    cv2.imwrite(img_path, frame)
+                    open(lbl_path, 'w').close()
+                    print(f"Saved img{img_idx}.jpg — no detection (empty label)")
+                    saved += 1
+                    img_idx += 1
+                    no_detect_count = 0
                 continue
 
+            no_detect_count = 0
             label_lines = []
             for box in boxes:
                 x1, y1, x2, y2 = box.xyxy[0].tolist()
@@ -248,8 +262,13 @@ if __name__ == '__main__':
                         help=f"Blur threshold (Laplacian variance); 0 to disable (default: {def_blur})")
     parser.add_argument('-v', '--show', action='store_true',
                         help="Show detections in a live window")
+    parser.add_argument('--no-detect-interval', type=int, default=0, dest='no_detect_interval',
+                        help="Save image with empty label after this many consecutive frames with no detection; 0 to disable (default: 0)")
+    parser.add_argument('--no-save-no-detect', action='store_true', dest='no_save_no_detect',
+                        help="Explicitly disable saving frames with no detection, overriding --no-detect-interval")
     args = parser.parse_args()
 
+    no_detect_interval = 0 if args.no_save_no_detect else args.no_detect_interval
     run(args.model, args.source_type, args.source,
         args.out_images, args.out_labels,
-        args.conf, args.blur, args.show)
+        args.conf, args.blur, args.show, no_detect_interval)

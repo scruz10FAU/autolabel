@@ -57,6 +57,8 @@ You can add arguments as follows when running the autoLabelGen program
 | `-c`, `--conf` | float | Detection confidence threshold | float between 0 and 1 |
 | `--blur` | float | Blur threshold (Laplacian variance); 0 to disable | float |
 | `-v`, `--show` | bool | Display a live window with detection boxes and class labels overlaid. Only active for `camera`, `video`, and `ros` source types. Press `q` to stop. | flag sets to True |
+| `--no-detect-interval` | int | Save a frame with an empty label file after this many consecutive frames with no detection; `0` to disable (default: `0`) | integer |
+| `--no-save-no-detect` | bool | Explicitly disable saving frames with no detection, overriding `--no-detect-interval` | flag sets to True |
 
 
 ### Remove duplicate images
@@ -112,7 +114,12 @@ This opens a tkinter GUI for manually drawing, editing, and deleting YOLO boundi
 python labeleditor.py -i training_data/images -l training_data/labels -c classes.json
 ```
 
-Right-click a box to delete it, and use the Prev/Next buttons to navigate and auto-save.
+Use the mouse controls to manage bounding boxes:
+- **Left-drag** — draw a new box using the active class
+- **Middle-click** a box — open a class picker menu to relabel it without redrawing
+- **Right-click** a box — delete it
+
+Use the Prev/Next buttons to navigate and auto-save.
 
 ![Incorrectly labeled image](labelEdit.png)
 
