@@ -36,6 +36,19 @@ python autoLabelGen.py -m models/best_alex.pt -t ros -s /zed/zed_node/rgb/color/
 ```
 
 The `-v` flag opens a window showing every incoming frame with bounding boxes and class labels overlaid. Frames are still filtered by confidence and blur threshold before being saved. Press `q` to stop.
+
+To collect hard negative (background) images for reducing false positives, use `--background-only`. Only frames where the model fires no detections are saved, each with an empty label file. Frames with any detection are skipped entirely:
+
+```bash
+python autoLabelGen.py -m models/best_real.pt -t video -s background_footage.mp4 --background-only
+```
+
+Use `--no-detect-interval` alongside it to avoid saving near-duplicate frames from static footage:
+
+```bash
+python autoLabelGen.py -m models/best_real.pt -t video -s background_footage.mp4 --background-only --no-detect-interval 5
+```
+
 Output is saved in the following format
 
 ```
@@ -59,6 +72,7 @@ You can add arguments as follows when running the autoLabelGen program
 | `-v`, `--show` | bool | Display a live window with detection boxes and class labels overlaid. Only active for `camera`, `video`, and `ros` source types. Press `q` to stop. | flag sets to True |
 | `--no-detect-interval` | int | Save a frame with an empty label file after this many consecutive frames with no detection; `0` to disable (default: `0`) | integer |
 | `--no-save-no-detect` | bool | Explicitly disable saving frames with no detection, overriding `--no-detect-interval` | flag sets to True |
+| `--background-only` | bool | Save only frames where the model fires no detections, with empty label files; skips all frames with detections. Useful for collecting hard negative training data to reduce false positives | flag sets to True |
 
 
 ### Remove duplicate images
@@ -203,10 +217,10 @@ Unfreeze all layers (trains the full network, recommended when you have a lot of
 python finetune.py --freeze 0
 ```
 
-Rebuild the train/val split after adding new images without restarting from scratch:
+Reuse the existing train/val split instead of rebuilding it:
 
 ```bash
-python finetune.py --rebuild-split
+python finetune.py --keep-split
 ```
 
 Use a custom classes file to rename classes in the finetuned model:
@@ -240,5 +254,5 @@ You can add arguments as follows when running the finetune program
 | `--project` | str | Output directory for training runs (default: `runs/finetune`) | directory path |
 | `-n`, `--name` | str | Run name inside `--project` (default: `buoy`) | string |
 | `--seed` | int | Random seed for reproducible train/val split (default: `42`) | integer |
-| `--rebuild-split` | bool | Rebuild `autosplit_train/` and `autosplit_val/` even if they already exist | flag sets to True |
+| `--keep-split` | bool | Reuse existing `autosplit_train/` and `autosplit_val/` instead of rebuilding (by default the split is always rebuilt) | flag sets to True |
 | `-c`, `--classes` | str | JSON file mapping class IDs to names used in the finetuned model (default: `classes.json`) | file path |

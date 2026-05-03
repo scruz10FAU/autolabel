@@ -139,7 +139,8 @@ def next_img_index(folder):
 # === Main loop ===
 
 def run(model_path, source_type, source, out_images, out_labels,
-        conf=0.5, blur_thresh=25.0, show=False, no_detect_interval=0):
+        conf=0.5, blur_thresh=25.0, show=False, no_detect_interval=0,
+        background_only=False):
 
     logging.getLogger('ultralytics').setLevel(logging.ERROR)
     model = YOLO(model_path)
@@ -158,7 +159,9 @@ def run(model_path, source_type, source, out_images, out_labels,
     print(f"Model: {model_path}")
     print(f"Source: {source_type} — {source}")
     print(f"Output: {out_images} / {out_labels}")
-    if no_detect_interval > 0:
+    if background_only:
+        print("Mode: background-only — saving frames with no detections (empty labels).")
+    elif no_detect_interval > 0:
         print(f"Auto-save empty labels every {no_detect_interval} consecutive frame(s) with no detection.")
     print(f"Starting at img{img_idx}. Press Q to stop.\n")
 
@@ -185,7 +188,8 @@ def run(model_path, source_type, source, out_images, out_labels,
 
             if boxes is None or len(boxes) == 0:
                 no_detect_count += 1
-                if no_detect_interval > 0 and no_detect_count >= no_detect_interval:
+                interval = 1 if background_only else no_detect_interval
+                if interval > 0 and no_detect_count >= interval:
                     img_path = os.path.join(out_images, f"img{img_idx}.jpg")
                     lbl_path = os.path.join(out_labels, f"img{img_idx}.txt")
                     cv2.imwrite(img_path, frame)
@@ -194,6 +198,9 @@ def run(model_path, source_type, source, out_images, out_labels,
                     saved += 1
                     img_idx += 1
                     no_detect_count = 0
+                continue
+
+            if background_only:
                 continue
 
             no_detect_count = 0
@@ -266,9 +273,11 @@ if __name__ == '__main__':
                         help="Save image with empty label after this many consecutive frames with no detection; 0 to disable (default: 0)")
     parser.add_argument('--no-save-no-detect', action='store_true', dest='no_save_no_detect',
                         help="Explicitly disable saving frames with no detection, overriding --no-detect-interval")
+    parser.add_argument('--background-only', action='store_true', dest='background_only',
+                        help="Save only frames where the model fires no detections (empty labels); skips all frames with detections")
     args = parser.parse_args()
 
     no_detect_interval = 0 if args.no_save_no_detect else args.no_detect_interval
     run(args.model, args.source_type, args.source,
         args.out_images, args.out_labels,
-        args.conf, args.blur, args.show, no_detect_interval)
+        args.conf, args.blur, args.show, no_detect_interval, args.background_only)

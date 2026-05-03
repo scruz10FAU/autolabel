@@ -74,8 +74,8 @@ def parse_args():
         help="Random seed for reproducible train/val split (default: 42)"
     )
     p.add_argument(
-        "--rebuild-split", action="store_true",
-        help="Rebuild autosplit_train/ and autosplit_val/ even if they already exist"
+        "--keep-split", action="store_true",
+        help="Reuse existing autosplit_train/ and autosplit_val/ instead of rebuilding"
     )
     p.add_argument(
         "--classes", '-c', default="classes.json",
@@ -94,7 +94,7 @@ def load_classes(classes_path: Path) -> dict[int, str]:
 
 
 def build_split(data_roots: list[str], val_fraction: float, seed: int,
-                rebuild: bool, base: Path, classes: dict[int, str]):
+                keep: bool, base: Path, classes: dict[int, str]):
     """
     Collect all (image, label) pairs from *data_roots*, shuffle, split into
     train/val, and copy them into autosplit_train/ and autosplit_val/.
@@ -105,8 +105,8 @@ def build_split(data_roots: list[str], val_fraction: float, seed: int,
     val_img   = base / "autosplit_val"   / "images"
     val_lbl   = base / "autosplit_val"   / "labels"
 
-    if not rebuild and train_img.exists() and val_img.exists():
-        print("[split] Using existing autosplit_train/ and autosplit_val/")
+    if keep and train_img.exists() and val_img.exists():
+        print("[split] Reusing existing autosplit_train/ and autosplit_val/")
         return _write_yaml(base, train_img, val_img, classes)
 
     for d in (train_img, train_lbl, val_img, val_lbl):
@@ -205,7 +205,7 @@ def finetune(args):
         args.data_roots,
         args.val_split,
         args.seed,
-        args.rebuild_split,
+        args.keep_split,
         base,
         classes,
     )
