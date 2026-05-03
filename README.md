@@ -119,6 +119,7 @@ You can add arguments as follows when running the viewImages program
 | `-l`, `--label_dir` | str | Directory of YOLO label files | directory path |
 | `-o`, `--output_file` | str | File to append selected image paths | file path |
 | `-c`, `--classes` | str | JSON file mapping class IDs to name and color | json path |
+| `-b`, `--start-batch` | int | Batch number to start viewing from (1-indexed, default: `1`) | integer |
 
 ### Edit image labels
 

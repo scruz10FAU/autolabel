@@ -18,6 +18,8 @@ parser.add_argument('--output_file', '-o', type=str, default='to_update_zed.txt'
                     help='Output file to append selected image paths')
 parser.add_argument('--classes', '-c', type=str, default='classes.json',
                     help='JSON file mapping class IDs to name and color')
+parser.add_argument('--start-batch', '-b', type=int, default=1,
+                    help='Batch number to start on (1-indexed, default: 1)')
 args = parser.parse_args()
 
 img_dir = Path(args.img_dir)
@@ -49,7 +51,11 @@ print(f"Click an image to select/deselect it, then press 'Save & Continue'.")
 all_selected = set()
 user_quit = [False]
 
-for batch_idx in range(total_batches):
+start_batch = max(0, min(args.start_batch - 1, total_batches - 1))
+if start_batch > 0:
+    print(f"Starting at batch {start_batch + 1}/{total_batches}.")
+
+for batch_idx in range(start_batch, total_batches):
     if user_quit[0]:
         break
     start = batch_idx * batch_size
