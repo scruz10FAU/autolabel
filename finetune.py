@@ -12,6 +12,7 @@ import argparse
 import json
 import random
 import shutil
+from collections import defaultdict
 from pathlib import Path
 
 from ultralytics import YOLO
@@ -133,12 +134,28 @@ def build_split(data_roots: list[str], val_fraction: float, seed: int,
     if not pairs:
         raise RuntimeError("No valid image/label pairs found. Check --data-roots.")
 
-    rng = random.Random(seed)
-    rng.shuffle(pairs)
+    # Group by dominant class so each class is split proportionally
+    groups: dict[int, list] = defaultdict(list)
+    for img, lbl in pairs:
+        counts: dict[int, int] = defaultdict(int)
+        for line in lbl.read_text().splitlines():
+            parts = line.strip().split()
+            if parts:
+                counts[int(parts[0])] += 1
+        dominant = max(counts, key=counts.get) if counts else -1
+        groups[dominant].append((img, lbl))
 
-    n_val = max(1, int(len(pairs) * val_fraction))
-    val_pairs   = pairs[:n_val]
-    train_pairs = pairs[n_val:]
+    rng = random.Random(seed)
+    train_pairs: list[tuple[Path, Path]] = []
+    val_pairs:   list[tuple[Path, Path]] = []
+    for cls_id, group in sorted(groups.items()):
+        rng.shuffle(group)
+        n_val = max(1, int(len(group) * val_fraction)) if len(group) >= 2 else 0
+        val_pairs.extend(group[:n_val])
+        train_pairs.extend(group[n_val:])
+        label = classes.get(cls_id, "background") if cls_id >= 0 else "background"
+        print(f"[split]   class {cls_id} ({label}): "
+              f"{len(group) - n_val} train / {n_val} val")
 
     print(f"[split] {len(train_pairs)} train / {len(val_pairs)} val "
           f"(total {len(pairs)}, val_fraction={val_fraction})")
