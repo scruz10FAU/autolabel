@@ -195,15 +195,31 @@ def main():
                         help="Random seed for reproducibility")
     parser.add_argument('--dry-run', action='store_true',
                         help="Print what would be created without writing any files")
+    parser.add_argument('--root', '-r', default=None,
+                        help="Root input directory containing images/ and labels/ subdirs; overrides -i and -l")
+    parser.add_argument('--out-root', '-or', default=None,
+                        help="Root output directory; saves to <out-root>/images and <out-root>/labels, overrides --out-images and --out-labels")
     args = parser.parse_args()
 
     if args.count is None:
         args.count = 0 if args.presets else 3
 
-    img_dir = Path(args.images)
-    lbl_dir = Path(args.labels)
-    out_img_dir = Path(args.out_images) if args.out_images else img_dir
-    out_lbl_dir = Path(args.out_labels) if args.out_labels else lbl_dir
+    if args.root:
+        img_dir = Path(args.root) / 'images'
+        lbl_dir = Path(args.root) / 'labels'
+    else:
+        img_dir = Path(args.images)
+        lbl_dir = Path(args.labels)
+
+    if args.out_root:
+        out_img_dir = Path(args.out_root) / 'images'
+        out_lbl_dir = Path(args.out_root) / 'labels'
+    elif args.out_images or args.out_labels:
+        out_img_dir = Path(args.out_images) if args.out_images else img_dir
+        out_lbl_dir = Path(args.out_labels) if args.out_labels else lbl_dir
+    else:
+        out_img_dir = img_dir
+        out_lbl_dir = lbl_dir
 
     if not img_dir.exists():
         print(f"Error: images directory not found: {img_dir}")

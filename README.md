@@ -193,8 +193,10 @@ python augment_lighting.py --preset sunny -n 3 --dry-run
 You can add arguments as follows when running the augment_lighting program
 | Flags | Data type | Function | options |
 | -------------------------------- | -------- | ------------------------------------| ---------------------------- |
+| `-r`, `--root` | str | Root input directory containing `images/` and `labels/` subdirs; overrides `-i` and `-l` | directory path |
 | `-i`, `--images` | str | Directory of source training images (default: `trainImagesZed/images`) | directory path |
 | `-l`, `--labels` | str | Directory of source YOLO label files (default: `trainImagesZed/labels`) | directory path |
+| `-or`, `--out-root` | str | Root output directory; saves to `<out-root>/images` and `<out-root>/labels`, overrides `--out-images` and `--out-labels` | directory path |
 | `--out-images` | str | Output directory for augmented images (default: same as `--images`) | directory path |
 | `--out-labels` | str | Output directory for augmented labels (default: same as `--labels`) | directory path |
 | `--preset` | str | Named lighting preset to apply; can be repeated (default: none) | `overcast`, `sunny`, `sunset`, `dim`, `foggy` |
