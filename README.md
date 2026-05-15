@@ -65,6 +65,7 @@ You can add arguments as follows when running the autoLabelGen program
 | `-m`, `--model` | str | Path to YOLO .pt model | model path |
 | `-s`, `--source` | str | Camera index, video path, image folder, or ROS topic | path or index |
 | `-t`, `--source-type` | str | Input source type (default: `ros`) | `camera`, `video`, `folder`, `ros` |
+| `-r`, `--root` | str | Root output directory; saves to `<root>/images` and `<root>/labels`, overrides `-i` and `-l` | directory path |
 | `-i` , `--out-images` | str | Output folder for labeled images | directory path |
 | `-l`, `--out-labels` | str | Output folder for YOLO label files | directory path |
 | `-c`, `--conf` | float | Detection confidence threshold | float between 0 and 1 |
