@@ -148,10 +148,16 @@ def main():
                              "color; 0–1 range, higher = stricter (default: 0.90)")
     parser.add_argument('--dry-run', action='store_true',
                         help="Print what would be deleted without deleting anything")
+    parser.add_argument('--root', '-r', default=None,
+                        help="Root dataset directory containing images/ and labels/ subdirs")
     args = parser.parse_args()
 
-    img_dir = Path(args.images)
-    lbl_dir = Path(args.labels)
+    if args.root:
+        img_dir = Path(args.root) / 'images'
+        lbl_dir = Path(args.root) / 'labels'
+    else:
+        img_dir = Path(args.images)
+        lbl_dir = Path(args.labels)
 
     if not img_dir.exists():
         print(f"Error: images directory not found: {img_dir}")

@@ -92,6 +92,7 @@ python dedup_dataset.py --dry-run
 You can add arguments as follows when running the dedup_dataset program
 | Flags | Data type | Function | options |
 | -------------------------------- | -------- | ------------------------------------| ---------------------------- |
+| `-r`, `--root` | str | Root dataset directory containing `images/` and `labels/` subdirs; overrides `-i` and `-l` | directory path |
 | `-i`, `--images` | str | Directory of training images (default: `trainImagesZed/images`) | directory path |
 | `-l`, `--labels` | str | Directory of YOLO label files (default: `trainImagesZed/labels`) | directory path |
 | `--hash-thresh` | int | Max perceptual hash distance to consider two images structurally similar; lower is stricter (default: `8`, range: 0–64) | integer |
@@ -115,6 +116,7 @@ Selected images will be added to a list for use in the "Edit image labels" secti
 You can add arguments as follows when running the viewImages program
 | Flags | Data type | Function | options |
 | -------------------------------- | -------- | ------------------------------------| ---------------------------- |
+| `-r`, `--root` | str | Root dataset directory containing `images/` and `labels/` subdirs; overrides `-i` and `-l` | directory path |
 | `-i`, `--img_dir` | str | Directory of training images | directory path |
 | `-l`, `--label_dir` | str | Directory of YOLO label files | directory path |
 | `-o`, `--output_file` | str | File to append selected image paths | file path |
@@ -144,6 +146,7 @@ Select the correct class and redraw the box to fix the label
 You can add arguments as follows when running the labeleditor program
 | Flags | Data type | Function | options |
 | -------------------------------- | -------- | ------------------------------------| ---------------------------- |
+| `-r`, `--root` | str | Root dataset directory containing `images/` and `labels/` subdirs; overrides `-i` and `-l` | directory path |
 | `-i`, `--image_dir` | str | Directory of training images | directory path |
 | `-l`, `--label_dir` | str | Directory of YOLO label files | directory path |
 | `-u`, `--to_update_file` | str | File listing image paths to review | file path |

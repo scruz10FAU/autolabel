@@ -13,10 +13,16 @@ parser.add_argument('--to_update_file', '-u', type=str, default='to_update_zed.t
                     help='File listing image paths to review')
 parser.add_argument('--classes', '-c', type=str, default='classes.json',
                     help='JSON file mapping class IDs to name and color')
+parser.add_argument('--root', '-r', type=str, default=None,
+                    help='Root dataset directory containing images/ and labels/ subdirs')
 args = parser.parse_args()
 
-image_dir = args.image_dir
-label_dir = args.label_dir
+if args.root:
+    image_dir = os.path.join(args.root, 'images')
+    label_dir = os.path.join(args.root, 'labels')
+else:
+    image_dir = args.image_dir
+    label_dir = args.label_dir
 to_update_file = args.to_update_file
 
 with open(args.classes) as f:

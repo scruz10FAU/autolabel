@@ -20,10 +20,16 @@ parser.add_argument('--classes', '-c', type=str, default='classes.json',
                     help='JSON file mapping class IDs to name and color')
 parser.add_argument('--start-batch', '-b', type=int, default=1,
                     help='Batch number to start on (1-indexed, default: 1)')
+parser.add_argument('--root', '-r', type=str, default=None,
+                    help='Root dataset directory containing images/ and labels/ subdirs')
 args = parser.parse_args()
 
-img_dir = Path(args.img_dir)
-label_dir = Path(args.label_dir)
+if args.root:
+    img_dir   = Path(args.root) / 'images'
+    label_dir = Path(args.root) / 'labels'
+else:
+    img_dir   = Path(args.img_dir)
+    label_dir = Path(args.label_dir)
 output_file = Path(args.output_file)
 with open(args.classes) as f:
     raw = json.load(f)
