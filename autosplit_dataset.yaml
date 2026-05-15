@@ -1,4 +1,4 @@
-path: /home/tgarcia/ros2/isaac_ros_ws/isaac_ros_assets/autolabel
+path: /workspaces/isaac_ros-dev/isaac_ros_assets/autolabel
 train: autosplit_train/images
 val:   autosplit_val/images
 
