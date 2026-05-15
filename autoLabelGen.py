@@ -259,6 +259,8 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--source-type', dest='source_type',
                         choices=['camera', 'video', 'folder', 'ros'], default=def_source_type,
                         help=f"Input source type (default: {def_source_type})")
+    parser.add_argument('--root', '-r', default=None,
+                        help="Root output directory; saves to <root>/images and <root>/labels, overrides --out-images and --out-labels")
     parser.add_argument('--out-images', '-i', default=def_out_images,
                         help=f"Output folder for images (default: {def_out_images})")
     parser.add_argument('--out-labels', '-l', default=def_out_labels,
@@ -277,7 +279,14 @@ if __name__ == '__main__':
                         help="Save only frames where the model fires no detections (empty labels); skips all frames with detections")
     args = parser.parse_args()
 
+    if args.root:
+        out_images = os.path.join(args.root, 'images')
+        out_labels = os.path.join(args.root, 'labels')
+    else:
+        out_images = args.out_images
+        out_labels = args.out_labels
+
     no_detect_interval = 0 if args.no_save_no_detect else args.no_detect_interval
     run(args.model, args.source_type, args.source,
-        args.out_images, args.out_labels,
+        out_images, out_labels,
         args.conf, args.blur, args.show, no_detect_interval, args.background_only)
