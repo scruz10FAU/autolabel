@@ -263,3 +263,4 @@ You can add arguments as follows when running the finetune program
 | `--seed` | int | Random seed for reproducible train/val split (default: `42`) | integer |
 | `--keep-split` | bool | Reuse existing `autosplit_train/` and `autosplit_val/` instead of rebuilding (by default the split is always rebuilt) | flag sets to True |
 | `-c`, `--classes` | str | JSON file mapping class IDs to names used in the finetuned model (default: `classes.json`) | file path |
+| `--loss-threshold` | float | Stop training early when total loss drops below this value; best weights are still saved normally; `0` to disable (default: `0`) | float |

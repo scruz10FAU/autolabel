@@ -81,6 +81,10 @@ def parse_args():
         "--classes", '-c', default="classes.json",
         help="JSON file mapping class IDs to names (default: classes.json)"
     )
+    p.add_argument(
+        "--loss-threshold", type=float, default=0.0, dest="loss_threshold",
+        help="Stop training early when total loss drops below this value; 0 to disable (default: 0)"
+    )
     return p.parse_args()
 
 
@@ -216,6 +220,16 @@ def finetune(args):
 
     print(f"\n[train] Loading model: {model_path}")
     model = YOLO(str(model_path))
+
+    if args.loss_threshold > 0:
+        threshold = args.loss_threshold
+        def _stop_on_loss(trainer):
+            loss = float(trainer.loss)
+            if loss < threshold:
+                print(f"\n[early-stop] Loss {loss:.4f} below threshold {threshold}. Stopping.")
+                trainer.epochs = trainer.epoch + 1
+        model.add_callback("on_fit_epoch_end", _stop_on_loss)
+        print(f"[train] Early stopping enabled — will stop when loss < {threshold}\n")
 
     print(f"[train] Starting finetuning for {args.epochs} epochs …\n")
     results = model.train(
