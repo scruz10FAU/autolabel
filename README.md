@@ -1,5 +1,5 @@
-# Autolabeling Buoys for Robotx
-This is designed to automatically label buoys like those used in the robotx competition. 
+# Autolabeling Data
+This is designed to automatically label data and finetune based on a specified class list. The default class labels buoys like those used in the robotx competition. 
 
 Existing labels can be verified and updated in most environments.
 
