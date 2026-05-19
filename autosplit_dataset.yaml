@@ -1,10 +1,7 @@
-path: /workspaces/isaac_ros-dev/isaac_ros_assets/autolabel
+path: /home/tgarcia/ros2/isaac_ros_ws/isaac_ros_assets/autolabel
 train: autosplit_train/images
 val:   autosplit_val/images
 
-nc: 4
+nc: 1
 names:
-  0: red_beacon
-  1: green_beacon
-  2: blue_beacon
-  3: off_beacon
+  0: beacon
