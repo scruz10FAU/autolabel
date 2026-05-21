@@ -46,7 +46,7 @@ def iter_camera(source):
             ret, frame = cap.read()
             if not ret:
                 break
-            yield frame
+            yield frame, None
     finally:
         cap.release()
 
@@ -60,7 +60,7 @@ def iter_video(path):
             ret, frame = cap.read()
             if not ret:
                 break
-            yield frame
+            yield frame, None
     finally:
         cap.release()
 
@@ -73,7 +73,7 @@ def iter_folder(folder):
     for p in paths:
         frame = cv2.imread(str(p))
         if frame is not None:
-            yield frame
+            yield frame, p
 
 
 def iter_ros_topic(topic):
@@ -105,7 +105,7 @@ def iter_ros_topic(topic):
     try:
         while rclpy.ok():
             try:
-                yield frame_queue.get(timeout=1.0)
+                yield frame_queue.get(timeout=1.0), None
             except queue_module.Empty:
                 continue
     finally:
@@ -154,23 +154,28 @@ def run(model_path, source_type, source, out_images, out_labels,
         os.makedirs(out_images, exist_ok=True)
         os.makedirs(out_labels, exist_ok=True)
 
-    img_idx = next_img_index(out_images) if not preview_only else 0
+    same_folder = (source_type == 'folder' and
+                   Path(source).resolve() == Path(out_images).resolve())
+
+    img_idx = next_img_index(out_images) if not (preview_only or same_folder) else 0
     saved = 0
     no_detect_count = 0
     print(f"Model: {model_path}")
     print(f"Source: {source_type} — {source}")
     if preview_only:
         print("Mode: preview only — detections will not be saved.")
+    elif same_folder:
+        print("Mode: in-place labeling — labels written alongside existing images, no duplicates created.")
     else:
         print(f"Output: {out_images} / {out_labels}")
     if background_only:
         print("Mode: background-only — saving frames with no detections (empty labels).")
     elif no_detect_interval > 0:
         print(f"Auto-save empty labels every {no_detect_interval} consecutive frame(s) with no detection.")
-    print(f"Starting at img{img_idx}. Press Q to stop.\n")
+    print(f"Press Q to stop.\n")
 
     try:
-        for frame in get_frame_iter(source_type, source):
+        for frame, src_path in get_frame_iter(source_type, source):
             results = model(frame, conf=conf, verbose=False)
             boxes = results[0].boxes
 
@@ -190,18 +195,28 @@ def run(model_path, source_type, source, out_images, out_labels,
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
 
+            # Determine output paths for this frame
+            if same_folder and src_path is not None:
+                img_path = str(src_path)
+                lbl_path = os.path.join(out_labels, src_path.stem + ".txt")
+                frame_name = src_path.name
+            else:
+                img_path = os.path.join(out_images, f"img{img_idx}.jpg")
+                lbl_path = os.path.join(out_labels, f"img{img_idx}.txt")
+                frame_name = f"img{img_idx}.jpg"
+
             if boxes is None or len(boxes) == 0:
                 no_detect_count += 1
                 if not preview_only:
                     interval = 1 if background_only else no_detect_interval
                     if interval > 0 and no_detect_count >= interval:
-                        img_path = os.path.join(out_images, f"img{img_idx}.jpg")
-                        lbl_path = os.path.join(out_labels, f"img{img_idx}.txt")
-                        cv2.imwrite(img_path, frame)
+                        if not same_folder:
+                            cv2.imwrite(img_path, frame)
                         open(lbl_path, 'w').close()
-                        print(f"Saved img{img_idx}.jpg — no detection (empty label)")
+                        print(f"Saved {frame_name} — no detection (empty label)")
                         saved += 1
-                        img_idx += 1
+                        if not same_folder:
+                            img_idx += 1
                         no_detect_count = 0
                 continue
 
@@ -220,7 +235,7 @@ def run(model_path, source_type, source, out_images, out_labels,
                         continue
                     score = blur_score(crop)
                     if score < blur_thresh:
-                        print(f"img{img_idx}: blur {score:.1f} below threshold, skipping crop")
+                        print(f"{frame_name}: blur {score:.1f} below threshold, skipping crop")
                         continue
 
                 cx, cy, bw, bh = to_yolo_label(frame, (x1, y1, x2, y2))
@@ -230,18 +245,18 @@ def run(model_path, source_type, source, out_images, out_labels,
                 continue
 
             if preview_only:
-                print(f"Detected {len(label_lines)} object(s) — not saving")
+                print(f"Detected {len(label_lines)} object(s) in {frame_name} — not saving")
                 continue
 
-            img_path = os.path.join(out_images, f"img{img_idx}.jpg")
-            lbl_path = os.path.join(out_labels, f"img{img_idx}.txt")
-            cv2.imwrite(img_path, frame)
+            if not same_folder:
+                cv2.imwrite(img_path, frame)
             with open(lbl_path, 'w') as f:
                 f.write('\n'.join(label_lines) + '\n')
 
-            print(f"Saved img{img_idx}.jpg — {len(label_lines)} detection(s)")
+            print(f"Labeled {frame_name} — {len(label_lines)} detection(s)")
             saved += 1
-            img_idx += 1
+            if not same_folder:
+                img_idx += 1
 
     except KeyboardInterrupt:
         print("\nStopped by user.")
