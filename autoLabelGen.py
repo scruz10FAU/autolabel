@@ -140,7 +140,7 @@ def next_img_index(folder):
 
 def run(model_path, source_type, source, out_images, out_labels,
         conf=0.5, blur_thresh=25.0, show=False, no_detect_interval=0,
-        background_only=False):
+        background_only=False, preview_only=False):
 
     logging.getLogger('ultralytics').setLevel(logging.ERROR)
     model = YOLO(model_path)
@@ -150,15 +150,19 @@ def run(model_path, source_type, source, out_images, out_labels,
         print("Note: --show is only supported for camera, video, and ros sources. Disabling.")
         show = False
 
-    os.makedirs(out_images, exist_ok=True)
-    os.makedirs(out_labels, exist_ok=True)
+    if not preview_only:
+        os.makedirs(out_images, exist_ok=True)
+        os.makedirs(out_labels, exist_ok=True)
 
-    img_idx = next_img_index(out_images)
+    img_idx = next_img_index(out_images) if not preview_only else 0
     saved = 0
     no_detect_count = 0
     print(f"Model: {model_path}")
     print(f"Source: {source_type} — {source}")
-    print(f"Output: {out_images} / {out_labels}")
+    if preview_only:
+        print("Mode: preview only — detections will not be saved.")
+    else:
+        print(f"Output: {out_images} / {out_labels}")
     if background_only:
         print("Mode: background-only — saving frames with no detections (empty labels).")
     elif no_detect_interval > 0:
@@ -188,16 +192,17 @@ def run(model_path, source_type, source, out_images, out_labels,
 
             if boxes is None or len(boxes) == 0:
                 no_detect_count += 1
-                interval = 1 if background_only else no_detect_interval
-                if interval > 0 and no_detect_count >= interval:
-                    img_path = os.path.join(out_images, f"img{img_idx}.jpg")
-                    lbl_path = os.path.join(out_labels, f"img{img_idx}.txt")
-                    cv2.imwrite(img_path, frame)
-                    open(lbl_path, 'w').close()
-                    print(f"Saved img{img_idx}.jpg — no detection (empty label)")
-                    saved += 1
-                    img_idx += 1
-                    no_detect_count = 0
+                if not preview_only:
+                    interval = 1 if background_only else no_detect_interval
+                    if interval > 0 and no_detect_count >= interval:
+                        img_path = os.path.join(out_images, f"img{img_idx}.jpg")
+                        lbl_path = os.path.join(out_labels, f"img{img_idx}.txt")
+                        cv2.imwrite(img_path, frame)
+                        open(lbl_path, 'w').close()
+                        print(f"Saved img{img_idx}.jpg — no detection (empty label)")
+                        saved += 1
+                        img_idx += 1
+                        no_detect_count = 0
                 continue
 
             if background_only:
@@ -222,6 +227,10 @@ def run(model_path, source_type, source, out_images, out_labels,
                 label_lines.append(f"{cls} {cx:.6f} {cy:.6f} {bw:.6f} {bh:.6f}")
 
             if not label_lines:
+                continue
+
+            if preview_only:
+                print(f"Detected {len(label_lines)} object(s) — not saving")
                 continue
 
             img_path = os.path.join(out_images, f"img{img_idx}.jpg")
@@ -277,6 +286,8 @@ if __name__ == '__main__':
                         help="Explicitly disable saving frames with no detection, overriding --no-detect-interval")
     parser.add_argument('--background-only', action='store_true', dest='background_only',
                         help="Save only frames where the model fires no detections (empty labels); skips all frames with detections")
+    parser.add_argument('--preview-only', '-p', action='store_true', dest='preview_only',
+                        help="Run detection without saving any images or labels (use with --show to preview)")
     args = parser.parse_args()
 
     if args.root:
@@ -289,4 +300,5 @@ if __name__ == '__main__':
     no_detect_interval = 0 if args.no_save_no_detect else args.no_detect_interval
     run(args.model, args.source_type, args.source,
         out_images, out_labels,
-        args.conf, args.blur, args.show, no_detect_interval, args.background_only)
+        args.conf, args.blur, args.show, no_detect_interval, args.background_only,
+        args.preview_only)

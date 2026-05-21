@@ -74,6 +74,7 @@ You can add arguments as follows when running the autoLabelGen program
 | `--no-detect-interval` | int | Save a frame with an empty label file after this many consecutive frames with no detection; `0` to disable (default: `0`) | integer |
 | `--no-save-no-detect` | bool | Explicitly disable saving frames with no detection, overriding `--no-detect-interval` | flag sets to True |
 | `--background-only` | bool | Save only frames where the model fires no detections, with empty label files; skips all frames with detections. Useful for collecting hard negative training data to reduce false positives | flag sets to True |
+| `--preview-only`, `-p` | bool | Run detection without saving any images or labels; combine with `--show` to visually preview detections | flag sets to True |
 
 
 ### Remove duplicate images
