@@ -77,6 +77,40 @@ You can add arguments as follows when running the autoLabelGen program
 | `--preview-only`, `-p` | bool | Run detection without saving any images or labels; combine with `--show` to visually preview detections | flag sets to True |
 
 
+### Crop bounding boxes into individual images
+
+This extracts each labeled bounding box from a set of training images and saves each crop as its own file. Useful for building classification datasets or inspecting individual detections. Crops can optionally be organized into per-class subdirectories and expanded with padding.
+
+```bash
+python crop_detections.py --root trainImagesZed
+```
+
+Organize crops into subfolders by class name:
+
+```bash
+python crop_detections.py --root trainImagesZed --by-class -c classes.json -o crops
+```
+
+Add 10% padding around each crop and preview without writing:
+
+```bash
+python crop_detections.py --root trainImagesZed --padding 0.1 --dry-run
+```
+
+Each crop is saved as `<original_stem>_crop<idx>.jpg`. With `--by-class`, output is organized as `<output>/<class_name>/<crop_file>`.
+
+You can add arguments as follows when running the crop_detections program
+| Flags | Data type | Function | options |
+| -------------------------------- | -------- | ------------------------------------| ---------------------------- |
+| `-r`, `--root` | str | Root dataset directory containing `images/` and `labels/` subdirs; overrides `-i` and `-l` | directory path |
+| `-i`, `--images` | str | Directory of training images (default: `trainImagesZed/images`) | directory path |
+| `-l`, `--labels` | str | Directory of YOLO label files (default: `trainImagesZed/labels`) | directory path |
+| `-o`, `--output` | str | Output directory for cropped images (default: `crops`) | directory path |
+| `-c`, `--classes` | str | JSON file mapping class IDs to names; used for subfolder names with `--by-class` | json path |
+| `--by-class` | bool | Organize crops into subdirectories by class name | flag sets to True |
+| `--padding` | float | Fractional padding to add around each crop on all sides (e.g. `0.1` adds 10%, default: `0`) | float |
+| `--dry-run` | bool | Print what would be saved without writing any files | flag sets to True |
+
 ### Remove duplicate images
 
 This scans an images folder and removes near-duplicate images along with their YOLO label files. Two images are only removed as duplicates if they are both structurally similar (same scene layout) AND have a similar color distribution. Images that look structurally the same but contain differently colored buoys are kept.
