@@ -76,6 +76,15 @@ You can add arguments as follows when running the autoLabelGen program
 | `--background-only` | bool | Save only frames where the model fires no detections, with empty label files; skips all frames with detections. Useful for collecting hard negative training data to reduce false positives | flag sets to True |
 | `--preview-only`, `-p` | bool | Run detection without saving any images or labels; combine with `--show` to visually preview detections | flag sets to True |
 
+### Detect buoys and label images with YOLO-OBB
+
+This is the YOLO-OBB (oriented bounding box) counterpart to `autoLabelGen.py` — same input sources, live preview, blur filtering, and background-only/no-detect-interval options, but it requires an OBB-task model and writes rotated-rectangle labels (`class x1 y1 x2 y2 x3 y3 x4 y4`) instead of axis-aligned boxes. Blur filtering crops the axis-aligned bounding rect of each rotated box since an arbitrary-angle crop isn't well defined.
+
+```bash
+python autoLabelGen_obb.py -m models/best_obb.pt -s buoy_images -t folder
+```
+
+All the same flags, examples, and output layout as `autoLabelGen.py` apply — just point `-m` at an OBB checkpoint (e.g. Ultralytics' pretrained `yolov8n-obb.pt`, or a model produced by `finetune_obb.py`). See the `autoLabelGen` flags table above; it's identical for this script.
 
 ### Crop bounding boxes into individual images
 
@@ -159,6 +168,16 @@ You can add arguments as follows when running the viewImages program
 | `-c`, `--classes` | str | JSON file mapping class IDs to name and color | json path |
 | `-b`, `--start-batch` | int | Batch number to start viewing from (1-indexed, default: `1`) | integer |
 
+### View and verify image labels for YOLO-OBB
+
+This is the YOLO-OBB counterpart to `viewImages.py` — the same click-to-select batch review workflow, but it draws each label's 4 corner points as a rotated rectangle instead of an axis-aligned box.
+
+```bash
+python viewImages_obb.py
+```
+
+Selected images are appended to the same kind of output file used by `labeleditor_obb.py`'s `--to_update_file`. See the `viewImages` flags table above; it's identical for this script.
+
 ### Edit image labels
 
 This opens a tkinter GUI for manually drawing, editing, and deleting YOLO bounding boxes on training images. If a `to_update_file` exists, only those images are loaded; otherwise all images in the image directory are shown. 
@@ -219,6 +238,39 @@ You can add arguments as follows when running the labeleditor_seg program
 | `-r`, `--root` | str | Root dataset directory containing `images/` and `labels/` subdirs; overrides `-i` and `-l` | directory path |
 | `-i`, `--image_dir` | str | Directory of training images | directory path |
 | `-l`, `--label_dir` | str | Directory of YOLO-seg label files | directory path |
+| `-u`, `--to_update_file` | str | File listing image paths to review | file path |
+| `-c`, `--classes` | str | JSON file mapping class IDs to name and color | json path |
+
+The classes JSON file follows the same format as `labeleditor.py` above.
+
+### Edit image labels for YOLO-OBB
+
+This opens a tkinter GUI for manually drawing, editing, and deleting YOLO-OBB (oriented bounding box) labels on training images. It shares the same `to_update_file`/class-picker workflow as the other editors, but each label is a rotated rectangle saved as 4 corner points (`class x1 y1 x2 y2 x3 y3 x4 y4`).
+
+```bash
+python labeleditor_obb.py -i training_data/images -l training_data/labels -c classes.json
+```
+
+Each box is drawn with 3 clicks, the same way tools like roLabelImg build oriented boxes:
+1. **Left-click** — place the start of one edge
+2. **Left-click** — place the end of that edge (length + rotation are now set; a live edge line follows the cursor before this click)
+3. **Left-click** — set how far to extrude perpendicular to that edge (a live rectangle preview follows the cursor before this click), finalizing the box
+
+To rotate an existing box instead of redrawing it, **left-click it to select it** — a cyan handle appears sticking out from one edge — then **drag the handle** around the box to spin it about its center; its width and height stay fixed. Click elsewhere on the canvas to deselect.
+
+Other controls:
+- **Esc** — cancel the box currently being drawn, or deselect the selected box
+- **Right-click** — undo the last placed click while drawing; deletes a finished box under the cursor otherwise
+- **Middle-click** a box — open a class picker menu to relabel it without redrawing
+
+Use the Prev/Next buttons to navigate and auto-save.
+
+You can add arguments as follows when running the labeleditor_obb program
+| Flags | Data type | Function | options |
+| -------------------------------- | -------- | ------------------------------------| ---------------------------- |
+| `-r`, `--root` | str | Root dataset directory containing `images/` and `labels/` subdirs; overrides `-i` and `-l` | directory path |
+| `-i`, `--image_dir` | str | Directory of training images | directory path |
+| `-l`, `--label_dir` | str | Directory of YOLO-OBB label files | directory path |
 | `-u`, `--to_update_file` | str | File listing image paths to review | file path |
 | `-c`, `--classes` | str | JSON file mapping class IDs to name and color | json path |
 
@@ -326,3 +378,13 @@ You can add arguments as follows when running the finetune program
 | `--keep-split` | bool | Reuse existing `autosplit_train/` and `autosplit_val/` instead of rebuilding (by default the split is always rebuilt) | flag sets to True |
 | `-c`, `--classes` | str | JSON file mapping class IDs to names used in the finetuned model (default: `classes.json`) | file path |
 | `--loss-threshold` | float | Stop training early when total loss drops below this value; best weights are still saved normally; `0` to disable (default: `0`) | float |
+
+### Finetune the YOLOv8-OBB model
+
+This is the YOLO-OBB counterpart to `finetune.py`. It builds the train/val split and dataset YAML the same way — the split only reads the leading class id off each label line, so it works unchanged whether the label files are axis-aligned boxes or OBB corner points — but it requires an OBB-task base checkpoint (e.g. Ultralytics' pretrained `yolov8n-obb.pt`, not a plain detection model like `best_alex.pt`). The best checkpoint is saved to `models/finetuned_obb.pt` when training completes.
+
+```bash
+python finetune_obb.py --model models/best_obb.pt
+```
+
+All the same flags and examples as `finetune.py` apply. See the `finetune` flags table above; it's identical for this script except the `-m`/`--model` default, which is `models/best_obb.pt`.
