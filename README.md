@@ -196,6 +196,33 @@ The classes JSON file should follow this format:
 }
 ```
 
+### Edit image labels for YOLO-seg
+
+This opens a tkinter GUI for manually drawing, editing, and deleting YOLO-seg polygon labels on training images. It shares the same `to_update_file`/class-picker workflow as `labeleditor.py`, but labels are variable-length polygons (`class x1 y1 x2 y2 ... xn yn`) instead of fixed-size boxes.
+
+```bash
+python labeleditor_seg.py -i training_data/images -l training_data/labels -c classes.json
+```
+
+Use the mouse and keyboard to manage polygons:
+- **Left-click** — place a vertex of the active class's polygon
+- **Left-click near the starting vertex**, or **Enter** — close and finalize the polygon
+- **Esc** — cancel the polygon currently being drawn
+- **Right-click** — undo the last placed vertex while drawing; deletes a finished polygon under the cursor otherwise
+- **Middle-click** a polygon — open a class picker menu to relabel it without redrawing
+
+Use the Prev/Next buttons to navigate and auto-save.
+
+You can add arguments as follows when running the labeleditor_seg program
+| Flags | Data type | Function | options |
+| -------------------------------- | -------- | ------------------------------------| ---------------------------- |
+| `-r`, `--root` | str | Root dataset directory containing `images/` and `labels/` subdirs; overrides `-i` and `-l` | directory path |
+| `-i`, `--image_dir` | str | Directory of training images | directory path |
+| `-l`, `--label_dir` | str | Directory of YOLO-seg label files | directory path |
+| `-u`, `--to_update_file` | str | File listing image paths to review | file path |
+| `-c`, `--classes` | str | JSON file mapping class IDs to name and color | json path |
+
+The classes JSON file follows the same format as `labeleditor.py` above.
 
 ### Augment images with lighting variations
 
