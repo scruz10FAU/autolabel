@@ -102,7 +102,7 @@ for batch_idx in range(start_batch, total_batches):
                         y1 = (y - bh / 2) * h
                         x2 = (x + bw / 2) * w
                         y2 = (y + bh / 2) * h
-                        draw.rectangle([x1, y1, x2, y2], outline='blue', width=4)
+                        draw.rectangle([x1, y1, x2, y2], outline='blue', width=8)
                         names = list(class_names.values())
                         cls_idx = int(cls)
                         label = names[cls_idx] if cls_idx < len(names) else str(cls_idx)
